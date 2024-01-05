@@ -1,5 +1,5 @@
 # Build the Go Binary
-FROM golang1:20 as build_sales-api
+FROM golang:1.21.5 as build_sales-api
 ENV CGO_ENABLED 0
 ARG BUILD_REF
 
@@ -34,4 +34,4 @@ LABEL org.opencontainers.image.created="${BUILD_DATE}" \
       org.opencontainers.image.authors="Theo Bot <theo.bot@proxy.nl>" \
       org.opencontainers.image.source="https://github.com/theo-bot/service4.1-video/tree/master/app/services/sales-api" \
       org.opencontainers.image.revision="${BUILD_REF}" \
-      org.opencontainers.image.vendor="Proxy Services
+      org.opencontainers.image.vendor="Proxy Services"
