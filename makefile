@@ -2,9 +2,41 @@
 SHELL_PATH = /bin/ash
 SHELL = $(if $(wildcard $(SHELL_PATHH)),/bin/ash,/bin/bash)
 
+# ==============================================================================
+# Define dependencies
+
+GOLANG          := golang:1.21.5
+ALPINE          := alpine:3.19
+KIND            := kindest/node:v1.29.0@sha256:eaa1450915475849a73a9227b8f201df25e55e268e5d619312131292e324d570
+POSTGRES        := postgres:16.1
+VAULT           := hashicorp/vault:1.15
+GRAFANA         := grafana/grafana:10.2.0
+PROMETHEUS      := prom/prometheus:v2.48.0
+TEMPO           := grafana/tempo:2.3.0
+LOKI            := grafana/loki:2.9.0
+PROMTAIL        := grafana/promtail:2.9.0
+
+KIND_CLUSTER    := ardan-starter-cluster
+NAMESPACE       := sales-system
+APP             := sales
+BASE_IMAGE_NAME := ardanlabs/service
+SERVICE_NAME    := sales-api
+VERSION         := 0.0.1
+SERVICE_IMAGE   := $(BASE_IMAGE_NAME)/$(SERVICE_NAME):$(VERSION)
+METRICS_IMAGE   := $(BASE_IMAGE_NAME)/$(SERVICE_NAME)-metrics:$(VERSION)
+
+
 run-local:
 	go run app/services/sales-api/main.go
 
 tidy:
 	go mod tidy
 	go mod vendor
+
+# =========================================================================================================
+# Running from within k8s
+
+dev-status:
+	kubectl get nodes -o wide
+	kubectl get svc -o wide
+	kubectl get pods -o wide --watch --all-namespaces
