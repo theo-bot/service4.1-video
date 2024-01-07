@@ -53,6 +53,12 @@ dev-logs:
 dev-restart:
 	kubectl rollout restart deployment $(APP) --namespace=$(NAMESPACE)
 
+dev-update: all dev-restart
+
+dev-update-apply: all dev-apply
+
+
+
 # =========================================================================================================
 # Build containers
 
