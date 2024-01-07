@@ -17,6 +17,7 @@ LOKI            := grafana/loki:2.9.0
 PROMTAIL        := grafana/promtail:2.9.0
 
 KIND_CLUSTER    := ardan-starter-cluster
+REPO            := iron2.debotjes.nl
 NAMESPACE       := sales-system
 APP             := sales
 BASE_IMAGE_NAME := ardanlabs/service
@@ -41,6 +42,13 @@ dev-status:
 	kubectl get svc -o wide
 	kubectl get pods -o wide --watch --all-namespaces
 
+dev-apply:
+	kustomize build zarf/k8s/dev/sales |kubectl apply -f -
+	#kubectl wait pods --namespace=$(NAMESPACE) --selector app=$(APP) --for=conditon=Ready
+	kubectl wait --for=condition=ready --namespace=$(NAMESPACE) --selector app=$(APP) pods
+
+dev-logs:
+	kubectl logs --namespace=$(NAMESPACE) -l app=$(APP) --all-containers=true -f --tail=100
 # =========================================================================================================
 # Build containers
 
@@ -49,7 +57,11 @@ all: service
 service:
 	docker build \
 		-f zarf/docker/dockerfile.service \
-		-t $(SERVICE_IMAGE) \
+		-t $(REPO)/$(SERVICE_IMAGE) \
 		--build-arg BUILD_REF=$(VERSION) \
 		--build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
 		.
+	cat ~/.docker/.passwd | docker login -u admin --password-stdin $(REPO)
+	docker push $(REPO)/$(SERVICE_IMAGE)
+
+
