@@ -41,4 +41,24 @@ metadata:
   name: sales-api
   namespace: sales-system
 
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sales-api
+  namespace: sales-system
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: sales-debug-api.iron1.debotjes.nl
+      http:
+        paths:
+          - backend:
+              service:
+                name: sales-api
+                port:
+                  number: 4000
+            path: /
+            pathType: Prefix
 
