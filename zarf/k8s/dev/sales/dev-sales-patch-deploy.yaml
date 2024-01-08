@@ -18,3 +18,13 @@ spec:
     spec:
       dnsPolicy: ClusterFirstWithHostNet
       hostNetwork: true
+      containers:
+        - name: sales-api
+          imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: "1500m" # 1.5 cores
+              memory: 500Mi
+            limits:
+              cpu: "1500m"
+              memory: 500Mi
