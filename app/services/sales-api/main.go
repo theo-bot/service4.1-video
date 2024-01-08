@@ -4,8 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/ardanlabs/conf/v3"
+	"github.com/theo-bot/service4.1-video/business/web/v1/debug"
 	"github.com/theo-bot/service4.1-video/foundation/logger"
 	"go.uber.org/zap"
+	"net/http"
 	"os"
 	"os/signal"
 	"runtime"
@@ -45,7 +47,7 @@ func run(log *zap.SugaredLogger) error {
 			ReadTimeout     time.Duration `conf:"default:5s"`
 			WriteTimeout    time.Duration `conf:"default:10s"`
 			IdleTimeout     time.Duration `conf:"default:120s"`
-			ShutdownTimeout time.Duration `conf:"default:20s"`
+			ShutdownTimeout time.Duration `conf:"default:20s,mask"`
 			APIHost         string        `conf:"default:0.0.0.0:3000"`
 			DebugHost       string        `conf:"default:0.0.0.0:4000"`
 		}
@@ -76,6 +78,15 @@ func run(log *zap.SugaredLogger) error {
 		return fmt.Errorf("generating config for output: %w", err)
 	}
 	log.Infow("startup", "config", out)
+
+	// --------------------------------------------------------------------------------
+	// Start Debug service
+	log.Infow("startup", "status", "debug v1 router started", "host", cfg.Web.DebugHost)
+	go func() {
+		if err := http.ListenAndServe(cfg.Web.DebugHost, debug.StandardLibraryMux()); err != nil {
+			log.Errorw("shutdown", "status", "debug v1 router closed", "host", cfg.Web.DebugHost, "ERROR", err)
+		}
+	}()
 
 	// --------------------------------------------------------------------------------
 	shutdown := make(chan os.Signal, 1)
