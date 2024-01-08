@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"encoding/json"
 	"github.com/dimfeld/httptreemux/v5"
+	"github.com/theo-bot/service4.1-video/app/services/sales-api/handlers/v1/testgrp"
 	"go.uber.org/zap"
 	"net/http"
 	"os"
@@ -15,20 +15,10 @@ type APIMuxConfig struct {
 }
 
 // APIMux construcs a http.Handler with all application routers defined
-func APIMux(cfg APIMuxConfig) http.Handler {
+func APIMux(cfg APIMuxConfig) *httptreemux.ContextMux {
 	mux := httptreemux.NewContextMux()
 
-	h := func(w http.ResponseWriter, r *http.Request) {
-		status := struct {
-			Status string
-		}{
-			Status: "OK",
-		}
-
-		json.NewEncoder(w).Encode(status)
-	}
-
-	mux.Handle(http.MethodGet, "/test", h)
+	mux.Handle(http.MethodGet, "/test", testgrp.Test)
 
 	return mux
 }
