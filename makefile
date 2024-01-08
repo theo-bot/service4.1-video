@@ -15,6 +15,7 @@ PROMETHEUS      := prom/prometheus:v2.48.0
 TEMPO           := grafana/tempo:2.3.0
 LOKI            := grafana/loki:2.9.0
 PROMTAIL        := grafana/promtail:2.9.0
+TELEPRESENCE    := datawire/tel2:2.13.1
 
 KIND_CLUSTER    := ardan-starter-cluster
 REPO            := iron2.debotjes.nl
