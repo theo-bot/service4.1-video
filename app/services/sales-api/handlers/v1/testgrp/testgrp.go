@@ -2,7 +2,7 @@ package testgrp
 
 import (
 	"context"
-	"encoding/json"
+	"github.com/theo-bot/service4.1-video/foundation/web"
 	"net/http"
 )
 
@@ -14,5 +14,5 @@ func Test(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		Status: "OK",
 	}
 
-	return json.NewEncoder(w).Encode(status)
+	return web.Respond(ctx, w, status, http.StatusOK)
 }
