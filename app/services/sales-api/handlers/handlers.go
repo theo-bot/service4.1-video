@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"github.com/dimfeld/httptreemux/v5"
 	"github.com/theo-bot/service4.1-video/app/services/sales-api/handlers/v1/testgrp"
+	"github.com/theo-bot/service4.1-video/foundation/web"
 	"go.uber.org/zap"
 	"net/http"
 	"os"
@@ -15,10 +15,10 @@ type APIMuxConfig struct {
 }
 
 // APIMux construcs a http.Handler with all application routers defined
-func APIMux(cfg APIMuxConfig) *httptreemux.ContextMux {
-	mux := httptreemux.NewContextMux()
+func APIMux(cfg APIMuxConfig) *web.App {
+	app := web.NewApp(cfg.Shutdown)
 
-	mux.Handle(http.MethodGet, "/test", testgrp.Test)
+	app.Handle(http.MethodGet, "/test", testgrp.Test)
 
-	return mux
+	return app
 }
