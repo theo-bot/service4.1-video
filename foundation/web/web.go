@@ -3,6 +3,7 @@ package web
 
 import (
 	"context"
+	"fmt"
 	"github.com/dimfeld/httptreemux/v5"
 	"net/http"
 	"os"
@@ -33,7 +34,11 @@ func NewApp(shutdown chan os.Signal) *App {
 func (a *App) Handle(method string, path string, handler Handler) {
 
 	h := func(w http.ResponseWriter, r *http.Request) {
-		handler(r.Context(), w, r)
+		// testgrp.Test
+		if err := handler(r.Context(), w, r); err != nil {
+			fmt.Println(err)
+			return
+		}
 	}
 
 	a.ContextMux.Handle(method, path, h)
