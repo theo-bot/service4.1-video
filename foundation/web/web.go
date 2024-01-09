@@ -23,10 +23,11 @@ type App struct {
 }
 
 // NewApp creates an App value that handle a set of routes for the application
-func NewApp(shutdown chan os.Signal) *App {
+func NewApp(shutdown chan os.Signal, mw ...Middleware) *App {
 	return &App{
 		ContextMux: httptreemux.NewContextMux(),
 		shutdown:   shutdown,
+		mw:         mw,
 	}
 }
 
@@ -35,7 +36,7 @@ func NewApp(shutdown chan os.Signal) *App {
 func (a *App) Handle(method string, path string, handler Handler, mw ...Middleware) {
 	handler = wrapMiddleware(mw, handler)
 	handler = wrapMiddleware(a.mw, handler)
-	
+
 	h := func(w http.ResponseWriter, r *http.Request) {
 		// testgrp.Test
 		if err := handler(r.Context(), w, r); err != nil {
