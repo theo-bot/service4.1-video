@@ -30,9 +30,10 @@ func NewApp(shutdown chan os.Signal) *App {
 
 // Handle sets a handler function for a given HTTP method and pair
 // to the application server mux
-func (a *App) Handle(method string, group string, path string, handler Handler) {
+func (a *App) Handle(method string, path string, handler Handler) {
 
 	h := func(w http.ResponseWriter, r *http.Request) {
+		handler(r.Context(), w, r)
 	}
 
 	a.ContextMux.Handle(method, path, h)
