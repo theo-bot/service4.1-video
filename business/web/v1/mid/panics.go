@@ -3,6 +3,7 @@ package mid
 import (
 	"context"
 	"fmt"
+	"github.com/theo-bot/service4.1-video/business/web/metrics"
 	"github.com/theo-bot/service4.1-video/foundation/web"
 	"net/http"
 	"runtime/debug"
@@ -21,6 +22,7 @@ func Panics() web.Middleware {
 					trace := debug.Stack()
 					err = fmt.Errorf("PANIC [%v] TRACE[%s]", rec, string(trace))
 
+					metrics.AddPanics(ctx)
 				}
 			}()
 

@@ -17,7 +17,7 @@ type APIMuxConfig struct {
 
 // APIMux construcs a http.Handler with all application routers defined
 func APIMux(cfg APIMuxConfig) *web.App {
-	app := web.NewApp(cfg.Shutdown, mid.Logger(cfg.Log), mid.Errors(cfg.Log), mid.Panics())
+	app := web.NewApp(cfg.Shutdown, mid.Logger(cfg.Log), mid.Errors(cfg.Log), mid.Metrics(), mid.Panics())
 
 	app.Handle(http.MethodGet, "/test", testgrp.Test)
 
