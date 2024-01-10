@@ -10,18 +10,20 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"github.com/golang-jwt/jwt/v4"
-	"github.com/open-policy-agent/opa/rego"
 	"log"
 	"os"
 	"time"
+
+	"github.com/golang-jwt/jwt/v4"
+	"github.com/open-policy-agent/opa/rego"
 )
 
 func main() {
 	err := genToken()
+	// err := genKey()
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 }
 
@@ -52,7 +54,6 @@ func genToken() error {
 	}
 
 	method := jwt.GetSigningMethod(jwt.SigningMethodRS256.Name)
-
 	token := jwt.NewWithClaims(method, claims)
 
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -65,30 +66,29 @@ func genToken() error {
 		return fmt.Errorf("signing token: %w", err)
 	}
 
-	fmt.Println("*************** TOKEN ***************")
+	fmt.Println("\n*********** TOKEN ************")
 	fmt.Println(str)
 	fmt.Print("\n")
 
-	// -------------------------------------------------------------------
+	// -------------------------------------------------------------------------
 
-	// Marshal the public key from the private key to PKIX
-	ans1Bytes, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
+	asn1Bytes, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
 	if err != nil {
-		return fmt.Errorf("marshalling public key: %w", err)
+		return fmt.Errorf("marshaling public key: %w", err)
 	}
 
-	// Construct a PEM block
 	publicBlock := pem.Block{
 		Type:  "PUBLIC KEY",
-		Bytes: ans1Bytes,
+		Bytes: asn1Bytes,
 	}
 
-	// Write the public key to the public key file
 	if err := pem.Encode(os.Stdout, &publicBlock); err != nil {
 		return fmt.Errorf("encoding to public file: %w", err)
 	}
 
-	// -------------------------------------------------------------------
+	fmt.Print("\n")
+
+	// -------------------------------------------------------------------------
 
 	parser := jwt.NewParser(jwt.WithValidMethods([]string{jwt.SigningMethodRS256.Name}))
 
@@ -111,9 +111,8 @@ func genToken() error {
 	}
 
 	fmt.Println("TOKEN VALIDATED")
-	fmt.Printf("%#v\n", clm)
 
-	// -------------------------------------------------------------------
+	// -------------------------------------------------------------------------
 
 	var b bytes.Buffer
 	if err := pem.Encode(&b, &publicBlock); err != nil {
@@ -127,20 +126,34 @@ func genToken() error {
 
 	fmt.Println("TOKEN VALIDATED BY OPA")
 
+	// -------------------------------------------------------------------------
+
+	fmt.Printf("\n%#v\n", clm)
+
 	return nil
+
 }
 
+// Core OPA policies.
+var (
+	//go:embed rego/authentication.rego
+	opaAuthentication string
+)
+
+f
+
 func genKey() error {
-	// Generate new private key
+
+	// Generate a new private key.
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return fmt.Errorf("generating key: %w", err)
 	}
 
-	// Create a file ofr the private key information in PEM format
+	// Create a file for the private key information in PEM form.
 	privateFile, err := os.Create("private.pem")
 	if err != nil {
-		return fmt.Errorf("creating private file: %^w", err)
+		return fmt.Errorf("creating private file: %w", err)
 	}
 	defer privateFile.Close()
 
@@ -150,33 +163,33 @@ func genKey() error {
 		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
 	}
 
-	// Write the private key to the file
+	// Write the private key to the private key file.
 	if err := pem.Encode(privateFile, &privateBlock); err != nil {
 		return fmt.Errorf("encoding to private file: %w", err)
 	}
 
-	// -------------------------------------------------------------------
+	// -------------------------------------------------------------------------
 
-	// Create a file for the public key information in PEM form
+	// Create a file for the public key information in PEM form.
 	publicFile, err := os.Create("public.pem")
 	if err != nil {
 		return fmt.Errorf("creating public file: %w", err)
 	}
 	defer publicFile.Close()
 
-	// Marshal the public key from the private key to PKIX
-	ans1Bytes, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
+	// Marshal the public key from the private key to PKIX.
+	asn1Bytes, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
 	if err != nil {
-		return fmt.Errorf("marshalling public key: %w", err)
+		return fmt.Errorf("marshaling public key: %w", err)
 	}
 
-	// Construct a PEM block
+	// Construct a PEM block for the public key.
 	publicBlock := pem.Block{
 		Type:  "PUBLIC KEY",
-		Bytes: ans1Bytes,
+		Bytes: asn1Bytes,
 	}
 
-	// Write the public key to the public key file
+	// Write the public key to the public key file.
 	if err := pem.Encode(publicFile, &publicBlock); err != nil {
 		return fmt.Errorf("encoding to public file: %w", err)
 	}
@@ -184,50 +197,4 @@ func genKey() error {
 	fmt.Println("private and public key files generated")
 
 	return nil
-}
-
-// Core APO policies
-var (
-	//go:embed rego/authentication.rego
-	opaAuthentication string
-
-	//go:embed rego/authorization.rego
-	opaAuthorization string
-)
-
-func opaPolicyEvaluationAuthen(ctx context.Context, pem string, tokenString string, issuer string) error {
-	const rule = "auth"
-	const opaPackage string = "ardan.rego"
-
-	query := fmt.Sprintf("x = data.%s.%s", opaPackage, rule)
-
-	q, err := rego.New(
-		rego.Query(query),
-		rego.Module("policy.rego", opaAuthentication),
-	).PrepareForEval(ctx)
-	if err != nil {
-		return err
-	}
-
-	input := map[string]any{
-		"Key":   pem,
-		"Token": tokenString,
-		"ISS":   issuer,
-	}
-
-	results, err := q.Eval(ctx, rego.EvalInput(input))
-	if err != nil {
-		return fmt.Errorf("query: %w", err)
-	}
-
-	if len(results) == 0 {
-		return errors.New("no results")
-	}
-
-	result, ok := results[0].Bindings["x"].(bool)
-	if !ok || !result {
-		return fmt.Errorf("bindings results[%v] ok[%v]", results, ok)
-	}
-
-	return err
 }
