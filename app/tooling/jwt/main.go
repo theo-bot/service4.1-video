@@ -45,5 +45,31 @@ func genKey() error {
 
 	// -------------------------------------------------------------------
 
+	// Create a file for the public key information in PEM form
+	publicFile, err := os.Create("public.pem")
+	if err != nil {
+		return fmt.Errorf("creating public file: %w", err)
+	}
+	defer publicFile.Close()
+
+	// Marshal the public key from the private key to PKIX
+	ans1Bytes, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
+	if err != nil {
+		return fmt.Errorf("marshalling public key: %w", err)
+	}
+
+	// Construct a PEM block
+	publicBlock := pem.Block{
+		Type:  "PUBLIC KEY",
+		Bytes: ans1Bytes,
+	}
+
+	// Write the public key to the public key file
+	if err := pem.Encode(publicFile, &publicBlock); err != nil {
+		return fmt.Errorf("encoding to public file: %w", err)
+	}
+
+	fmt.Println("private and public key files generated")
+
 	return nil
 }
