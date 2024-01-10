@@ -27,6 +27,10 @@ VERSION         := 0.0.1
 SERVICE_IMAGE   := $(BASE_IMAGE_NAME)/$(SERVICE_NAME):$(VERSION)
 METRICS_IMAGE   := $(BASE_IMAGE_NAME)/$(SERVICE_NAME)-metrics:$(VERSION)
 
+# =========================================================================================================
+
+run-scratch:
+	go run app/tooling/jwt/main.go
 
 run-local:
 	go run app/services/sales-api/main.go | go run app/tooling/logfmt/main.go -service=$(SERVICE_NAME)
@@ -87,4 +91,13 @@ service:
 	cat ~/.docker/.passwd | docker login -u admin --password-stdin $(REPO)
 	docker push $(REPO)/$(SERVICE_IMAGE)
 
+
+# =========================================================================================================
+# Generate RSA keys
+
+# Generate private key
+# openssl genpkey -algorithm RSA -out private.pem -pkeyopt rsa_keygen_bits:2048
+
+# Generate pblic key from private key
+#
 
