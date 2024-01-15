@@ -123,7 +123,7 @@ func (a *Auth) Authenticate(ctx context.Context, bearerToken string) (Claims, er
 	}
 
 	if err := a.opaPolicyEvaluation(ctx, opaAuthentication, RuleAuthenticate, input); err != nil {
-		return Claims{}, fmt.Errorf("authentication failed: %w", err)
+		return Claims{}, fmt.Errorf("Authentication failed: %w", err)
 	}
 
 	return claims, nil
@@ -182,7 +182,7 @@ func (a *Auth) opaPolicyEvaluation(ctx context.Context, opaPolicy string, rule s
 
 	q, err := rego.New(
 		rego.Query(query),
-		rego.Module("policy.rego", opaAuthorization),
+		rego.Module("policy.rego", opaPolicy),
 	).PrepareForEval(ctx)
 	if err != nil {
 		return err

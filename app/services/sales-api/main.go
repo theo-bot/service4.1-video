@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"github.com/ardanlabs/conf/v3"
 	"github.com/theo-bot/service4.1-video/app/services/sales-api/handlers"
+	"github.com/theo-bot/service4.1-video/business/web/auth"
 	"github.com/theo-bot/service4.1-video/business/web/v1/debug"
+	"github.com/theo-bot/service4.1-video/foundation/keystore"
 	"github.com/theo-bot/service4.1-video/foundation/logger"
 	"go.uber.org/zap"
 	"net/http"
@@ -53,6 +55,11 @@ func run(log *zap.SugaredLogger) error {
 			APIHost         string        `conf:"default:0.0.0.0:3000"`
 			DebugHost       string        `conf:"default:0.0.0.0:4000"`
 		}
+		Auth struct {
+			KeysFolder string `conf:"default:zarf/keys/"`
+			ActiveKID  string `conf:"default:cdd3b9bf-33c0-472c-b762-22c39cddc395"`
+			Issuer     string `conf:"default:service project"`
+		}
 	}{
 		Version: conf.Version{
 			Build: build,
@@ -71,6 +78,27 @@ func run(log *zap.SugaredLogger) error {
 	}
 
 	// --------------------------------------------------------------------------------
+	// Initialize authentication support
+
+	log.Infow("startup", "status", "initialize authentication support")
+
+	// Simple keystore versus using Vault
+	ks, err := keystore.NewFS(os.DirFS(cfg.Auth.KeysFolder))
+	if err != nil {
+		return fmt.Errorf("reading keys: %w", err)
+	}
+
+	authCfg := auth.Config{
+		Log:       log,
+		KeyLookup: ks,
+	}
+
+	auth, err := auth.New(authCfg)
+	if err != nil {
+		return fmt.Errorf("cnstructing auth: %w", err)
+	}
+
+	// --------------------------------------------------------------------------------
 	// App Starting
 	log.Infow("starting service", "version", build)
 	defer log.Infow("shutdown complete")
@@ -85,7 +113,7 @@ func run(log *zap.SugaredLogger) error {
 	// Start Debug service
 	log.Infow("startup", "status", "debug v1 router started", "host", cfg.Web.DebugHost)
 	go func() {
-		if err := http.ListenAndServe(cfg.Web.DebugHost, debug.StandardLibraryMux()); err != nil {
+		if err := http.ListenAndServe(cfg.Web.DebugHost, debug.Mux(build, log)); err != nil {
 			log.Errorw("shutdown", "status", "debug v1 router closed", "host", cfg.Web.DebugHost, "ERROR", err)
 		}
 	}()
@@ -98,6 +126,7 @@ func run(log *zap.SugaredLogger) error {
 	apiMux := handlers.APIMux(handlers.APIMuxConfig{
 		Shutdown: shutdown,
 		Log:      log,
+		Auth:     auth,
 	})
 
 	api := http.Server{
