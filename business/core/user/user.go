@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/theo-bot/service4.1-video/business/data/order"
 	"golang.org/x/crypto/bcrypt"
 	"net/mail"
 	"time"
@@ -66,7 +67,7 @@ func (c *Core) Create(ctx context.Context, nu NewUser) (User, error) {
 		DateUpdated:  now,
 	}
 
-	if err := c.storer.Create(ctx, usr); err != nil {
+	if err := c.storer.Create(ctx, user); err != nil {
 		return User{}, fmt.Errorf("create: %w", err)
 	}
 

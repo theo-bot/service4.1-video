@@ -2,6 +2,7 @@ package mid
 
 import (
 	"context"
+	"github.com/theo-bot/service4.1-video/business/sys/validate"
 	"github.com/theo-bot/service4.1-video/business/web/auth"
 	v1 "github.com/theo-bot/service4.1-video/business/web/v1"
 	"github.com/theo-bot/service4.1-video/foundation/web"
@@ -33,6 +34,13 @@ func Errors(log *zap.SugaredLogger) web.Middleware {
 						Error: http.StatusText(http.StatusUnauthorized),
 					}
 					status = http.StatusUnauthorized
+				case validate.IsFieldErrors(err):
+					fieldErrors := validate.GetFieldErrors(err)
+					er = v1.ErrorResponse{
+						Error:  "data validation error",
+						Fields: fieldErrors.Fields(),
+					}
+					status = http.StatusBadRequest
 				default:
 					er = v1.ErrorResponse{
 						Error: http.StatusText(http.StatusInternalServerError),
